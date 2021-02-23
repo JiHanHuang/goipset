@@ -19,10 +19,14 @@ insmod <your_path>/ip_set.ko
 ## 使用指南
 
 **作为单纯客户端使用**
-你可以尝试编译执行`test`目录下的`Makefile`，会得到一个可执行文件，你可以像使用标准(c)版本的ipset
+你可以尝试编译`test`目录下的`main.go`:
+```
+go build -o goipset main.go
+```
+你会得到一个可执行文件`goipset`，你可以像使用标准(c)版本的ipset
 一样使用这个客户端(可能部分命令还没有支持，待完善)。比如:
 ```
-# goipset add hash_ip 1.1.1.1
+# ./goipset add hash_ip 1.1.1.1
 ```
 **作为三方库调用**
 比如：

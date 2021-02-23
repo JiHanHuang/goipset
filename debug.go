@@ -1,7 +1,7 @@
 /*
  * @Author: JiHan
  * @Date: 2021-02-20 17:23:25
- * @LastEditTime: 2021-02-22 17:17:50
+ * @LastEditTime: 2021-02-23 18:04:58
  * @LastEditors: JiHan
  * @Description:
  * @Usage:
@@ -17,7 +17,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const debug = true
+// Debug set debug mod. print msg of netlink connection.
+var Debug = false
 
 var debugf = log.Printf
 
@@ -103,7 +104,7 @@ var adtStr = map[int]string{
 }
 
 func debugIpsetResult(result GoIPSetResult) {
-	if !debug {
+	if !Debug {
 		return
 	}
 	debugf("IpsetResult:\n")
@@ -111,7 +112,7 @@ func debugIpsetResult(result GoIPSetResult) {
 }
 
 func debugIpsetRequest(req *nl.NetlinkRequest) {
-	if !debug {
+	if !Debug {
 		return
 	}
 	date := req.Serialize()
@@ -206,7 +207,7 @@ func debugParseEntry(data []byte) {
 	for attr := range nl.ParseAttributes(data) {
 		switch attr.Type {
 		case nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER:
-			debugf("    %s:%d\n", adtStr[nl.IPSET_ATTR_TIMEOUT], attr.Uint32())
+			debugf("    %s:%d\n", cadtStr[nl.IPSET_ATTR_TIMEOUT], attr.Uint32())
 		case nl.IPSET_ATTR_BYTES | nl.NLA_F_NET_BYTEORDER:
 		case nl.IPSET_ATTR_PACKETS | nl.NLA_F_NET_BYTEORDER:
 			debugf("    %s:%d\n", adtStr[int(attr.Type&nl.NLA_TYPE_MASK)], attr.Uint64())

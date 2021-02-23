@@ -1,0 +1,15 @@
+create hash_ip hash:ip
+add hash_ip 1.1.1.1
+add hash_ip 1.1.1.2
+list hash_ip
+del hash_ip 1.1.1.1
+flush hash_ip
+destroy hash_ip
+
+create hash_ip_port hash:ip,port
+add hash_ip_port 1.1.1.1,80
+add hash_ip_port 1.1.1.2,TCP:80
+list hash_ip_port
+del hash_ip_port 1.1.1.1,80
+flush hash_ip_port
+destroy hash_ip_port

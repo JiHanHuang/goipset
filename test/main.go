@@ -29,6 +29,7 @@ var (
 		"destroy":  {cmdDestroy, "creates a new ipset", 1},
 		"list":     {cmdList, "list specific ipset", 1},
 		"listall":  {cmdListAll, "list all ipsets", 0},
+		"flush":    {cmdFlush, "list all ipsets", 1},
 		"add":      {cmdAddDel(goipset.Add), "add entry", 2},
 		"del":      {cmdAddDel(goipset.Del), "delete entry", 2},
 	}
@@ -40,6 +41,7 @@ var (
 	withCounters = flag.Bool("with-counters", false, "create set with counters support")
 	withSkbinfo  = flag.Bool("with-skbinfo", false, "create set with skbinfo support")
 	replace      = flag.Bool("replace", false, "replace existing set/entry")
+	debug        = flag.Bool("debug", false, "set debug mode")
 )
 
 func main() {
@@ -72,6 +74,8 @@ func main() {
 		fmt.Printf("Invalid number of arguments. expected=%d given=%d\n", cmd.ArgCount, len(args))
 		os.Exit(1)
 	}
+
+	goipset.Debug = *debug
 
 	cmd.Function(args)
 }
@@ -110,6 +114,10 @@ func cmdCreate(args []string) {
 
 func cmdDestroy(args []string) {
 	check(goipset.Destroy(args[0]))
+}
+
+func cmdFlush(args []string) {
+	check(goipset.Flush(args[0]))
 }
 
 func cmdList(args []string) {
@@ -155,6 +163,7 @@ func cmdAddDel(f func(string, *goipset.GoIPSetEntry) error) func([]string) {
 			var strPort string
 			if i := strings.Index(portEntry[0], ":"); i > 0 {
 				proto := portEntry[0][:i]
+				proto = strings.ToLower(proto)
 				switch proto {
 				case "tcp":
 					ipPort.Proto = unix.IPPROTO_TCP
@@ -166,6 +175,7 @@ func cmdAddDel(f func(string, *goipset.GoIPSetEntry) error) func([]string) {
 				}
 				strPort = portEntry[0][i+1:]
 			} else {
+				ipPort.Proto = unix.IPPROTO_TCP
 				strPort = portEntry[0]
 			}
 			port, _ := strconv.Atoi(strPort)
