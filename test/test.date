@@ -8,8 +8,24 @@ destroy hash_ip
 
 create hash_ip_port hash:ip,port
 add hash_ip_port 1.1.1.1,80
-add hash_ip_port 1.1.1.2,TCP:80
+add hash_ip_port 1.1.1.2,TCP:81
 list hash_ip_port
 del hash_ip_port 1.1.1.1,80
 flush hash_ip_port
 destroy hash_ip_port
+
+create hash_net hash:net
+add hash_net 1.1.1.1/24
+add hash_net 1.1.2.1/24
+list hash_net
+del hash_net 1.1.1.1/24
+flush hash_net
+destroy hash_net
+
+create hash_net_port hash:net,port
+add hash_net_port 1.1.1.1/24,80
+add hash_net_port 1.1.2.1/24,TCP:81
+list hash_net_port
+del hash_net_port 1.1.1.1/24,80
+flush hash_net_port
+destroy hash_net_port

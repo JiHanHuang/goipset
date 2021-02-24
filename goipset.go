@@ -354,6 +354,8 @@ func (result *GoIPSetResult) parseAttrADT(data []byte) error {
 }
 
 func parseIPSetEntry(data []byte) (entry GoIPSetEntry, err error) {
+	set := SetResult{}
+	entry.Set = &set
 	for attr := range nl.ParseAttributes(data) {
 		switch attr.Type {
 		case nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER:
@@ -366,11 +368,10 @@ func parseIPSetEntry(data []byte) (entry GoIPSetEntry, err error) {
 			val := attr.Uint64()
 			entry.Packets = &val
 		case nl.IPSET_ATTR_ETHER:
-			entry.Set = &SetMac{net.HardwareAddr(attr.Value)}
+			set.MAC = net.HardwareAddr(attr.Value)
 		case nl.IPSET_ATTR_COMMENT:
 			entry.Comment = nl.BytesToString(attr.Value)
 		case nl.IPSET_ATTR_IP | nl.NLA_F_NESTED:
-			set := SetIP{}
 			for attr := range nl.ParseAttributes(attr.Value) {
 				switch attr.Type {
 				case nl.IPSET_ATTR_IP:
@@ -379,7 +380,12 @@ func parseIPSetEntry(data []byte) (entry GoIPSetEntry, err error) {
 					err = fmt.Errorf("unknown nested ADT attribute from kernel: %+v", attr)
 				}
 			}
-			entry.Set = &set
+		case nl.IPSET_ATTR_CIDR:
+			set.CIDR = attr.Uint8()
+		case nl.IPSET_ATTR_PROTO:
+			set.Proto = attr.Uint8()
+		case nl.IPSET_ATTR_PORT | nl.NLA_F_NET_BYTEORDER:
+			set.Port = attr.Uint16()
 		default:
 			err = fmt.Errorf("unknown ADT attribute from kernel: %+v", attr)
 		}

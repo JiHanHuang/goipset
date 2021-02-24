@@ -1,5 +1,6 @@
 # goipset
 A golang ipset client uses netlink to communicate with the kernel.
+用golang写的一个ipset客户端，使用netlink与内核进行通信。
 
 ## 基础环境
 内核必须包含ipset的ko, 可以通过以下方式确认：

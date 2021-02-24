@@ -139,70 +139,98 @@ func cmdAddDel(f func(string, *goipset.GoIPSetEntry) error) func([]string) {
 		setName := args[0]
 		element := args[1]
 
-		var set goipset.Set
-
-		//ip,port
-		if strings.Contains(element, ",") {
-			en := strings.Split(element, ",")
-			if len(en) != 2 {
-				fmt.Printf("Invalid entry format '%s'\n", element)
-				os.Exit(1)
-			}
-			ipPort := goipset.SetIPPort{}
-			//get ips
-			ipEntry := strings.Split(en[0], "-")
-			if len(ipEntry) == 2 {
-				ipPort.IP = net.ParseIP(ipEntry[0])
-				ipPort.IPTO = net.ParseIP(ipEntry[1])
-			} else {
-				ipPort.IP = net.ParseIP(en[0])
-			}
-
-			//get ports
-			portEntry := strings.Split(en[1], "-")
-			var strPort string
-			if i := strings.Index(portEntry[0], ":"); i > 0 {
-				proto := portEntry[0][:i]
-				proto = strings.ToLower(proto)
-				switch proto {
-				case "tcp":
-					ipPort.Proto = unix.IPPROTO_TCP
-				case "udp":
-					ipPort.Proto = unix.IPPROTO_UDP
-				default:
-					fmt.Printf("ipset: invalid proto '%s'\n", proto)
-					os.Exit(1)
-				}
-				strPort = portEntry[0][i+1:]
-			} else {
-				ipPort.Proto = unix.IPPROTO_TCP
-				strPort = portEntry[0]
-			}
-			port, _ := strconv.Atoi(strPort)
-			ipPort.Port = uint16(port)
-			if len(portEntry) == 2 {
-				portto, _ := strconv.Atoi(portEntry[1])
-				ipPort.PortTo = uint16(portto)
-			}
-			set = &ipPort
-			//ip
-		} else {
-			en := strings.Split(element, "-")
-			if len(en) == 2 {
-				set = &goipset.SetIP{IP: net.ParseIP(en[0]), IPTO: net.ParseIP(en[1])}
-			} else {
-				set = &goipset.SetIP{IP: net.ParseIP(element)}
-			}
-		}
 		entry := goipset.GoIPSetEntry{
 			Timeout: timeoutVal,
-			Set:     set,
+			Set:     parseIPSetSet(element),
 			Comment: *comment,
 			Replace: *replace,
 		}
 
 		check(f(setName, &entry))
 	}
+}
+
+func parseIPSetSet(element string) goipset.Set {
+	var set goipset.Set
+	if strings.Contains(element, "/") {
+		if strings.Contains(element, ",") { //net,port
+			netPort := goipset.SetNetPort{}
+			en := strings.Split(element, ",")
+			_ = en[1]
+			netPort.IP, netPort.CIDR = parseNet(en[0])
+			netPort.Port, netPort.PortTo, netPort.Proto = parsePort(en[1])
+			set = &netPort
+		} else { //net
+			net := goipset.SetNet{}
+			net.IP, net.CIDR = parseNet(element)
+			set = &net
+		}
+	} else {
+		if strings.Contains(element, ",") { //ip,port
+			ipPort := goipset.SetIPPort{}
+			en := strings.Split(element, ",")
+			_ = en[1]
+			ipPort.IP, ipPort.IPTO = parseIP(en[0])
+			ipPort.Port, ipPort.PortTo, ipPort.Proto = parsePort(en[1])
+			set = &ipPort
+		} else { //ip
+			ip := goipset.SetIP{}
+			ip.IP, ip.IPTO = parseIP(element)
+			set = &ip
+		}
+
+	}
+	return set
+}
+
+func parsePort(element string) (p, pTo uint16, pro uint8) {
+	portEntry := strings.Split(element, "-")
+	var strPort string
+	if i := strings.Index(portEntry[0], ":"); i > 0 {
+		proto := portEntry[0][:i]
+		proto = strings.ToLower(proto)
+		switch proto {
+		case "tcp":
+			pro = unix.IPPROTO_TCP
+		case "udp":
+			pro = unix.IPPROTO_UDP
+		default:
+			fmt.Printf("ipset: invalid proto '%s'\n", proto)
+			os.Exit(1)
+		}
+		strPort = portEntry[0][i+1:]
+	} else {
+		pro = unix.IPPROTO_TCP
+		strPort = portEntry[0]
+	}
+	port, _ := strconv.Atoi(strPort)
+	p = uint16(port)
+	if len(portEntry) == 2 {
+		portto, _ := strconv.Atoi(portEntry[1])
+		p = uint16(portto)
+	}
+	return
+}
+
+func parseIP(element string) (ip, ipto net.IP) {
+	en := strings.Split(element, "-")
+	if len(en) == 2 {
+		ip = net.ParseIP(en[0])
+		ipto = net.ParseIP(en[1])
+	} else {
+		ip = net.ParseIP(element)
+	}
+	return
+}
+
+func parseNet(element string) (ip net.IP, cidr uint8) {
+	ip, cidro, err := net.ParseCIDR(element)
+	if err != nil {
+		ip = net.ParseIP(element)
+	}
+	cidrPrefix, _ := cidro.Mask.Size()
+	cidr = uint8(cidrPrefix)
+	return
 }
 
 // panic on error

@@ -1,7 +1,7 @@
 /*
  * @Author: JiHan
  * @Date: 2021-02-22 12:24:19
- * @LastEditTime: 2021-02-22 17:30:10
+ * @LastEditTime: 2021-02-24 11:32:03
  * @LastEditors: JiHan
  * @Description:
  * @Usage:
@@ -22,6 +22,37 @@ type Set interface {
 	serializeAttr(parent *nl.RtAttr)
 	String() string
 	//update(date interface{})
+}
+
+var protoStr = map[uint8]string{
+	unix.IPPROTO_TCP: "TCP",
+	unix.IPPROTO_UDP: "UDP",
+}
+
+//SetResult is ipset list result set
+type SetResult struct {
+	MAC   net.HardwareAddr
+	IP    net.IP
+	CIDR  uint8
+	Port  uint16
+	Proto uint8
+}
+
+func (set *SetResult) serializeAttr(*nl.RtAttr) {
+	return
+}
+func (set *SetResult) String() string {
+	if set.MAC != nil {
+		return set.MAC.String()
+	}
+	retStr := fmt.Sprintf("%s", set.IP.String())
+	if set.CIDR > 0 {
+		retStr = fmt.Sprintf("%s/%d", retStr, set.CIDR)
+	}
+	if set.Port > 0 && set.Proto > 0 {
+		retStr = fmt.Sprintf("%s,%s:%d", retStr, protoStr[set.Proto], set.Port)
+	}
+	return retStr
 }
 
 //SetIP surpport signal ip and ip-ipto
@@ -63,11 +94,6 @@ type SetIPPort struct {
 	Port   uint16
 	PortTo uint16
 	Proto  uint8
-}
-
-var protoStr = map[uint8]string{
-	unix.IPPROTO_TCP: "TCP",
-	unix.IPPROTO_UDP: "UDP",
 }
 
 func (set *SetIPPort) serializeAttr(parent *nl.RtAttr) {
@@ -119,7 +145,63 @@ func (set *SetMac) String() string {
 
 //SetNet
 type SetNet struct {
-	Name string
 	IP   net.IP
-	CIDR uint16
+	CIDR uint8
+}
+
+func (set *SetNet) serializeAttr(parent *nl.RtAttr) {
+	if set.IP != nil {
+		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
+		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		parent.AddChild(attrIP)
+		if set.CIDR > 0 {
+			parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_CIDR, nl.Uint8Attr(set.CIDR)))
+		}
+	}
+}
+func (set *SetNet) String() string {
+	if set.CIDR > 0 {
+		return fmt.Sprintf("%s/%d", set.IP.String(), set.CIDR)
+	}
+	return fmt.Sprintf("%s", set.IP.String())
+}
+
+//SetNetPort
+type SetNetPort struct {
+	IP     net.IP
+	CIDR   uint8
+	Port   uint16
+	PortTo uint16
+	Proto  uint8
+}
+
+func (set *SetNetPort) serializeAttr(parent *nl.RtAttr) {
+	if set.IP != nil {
+		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
+		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		parent.AddChild(attrIP)
+		if set.CIDR > 0 {
+			parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_CIDR, nl.Uint8Attr(set.CIDR)))
+		}
+		bytesPort := make([]byte, 2)
+		binary.BigEndian.PutUint16(bytesPort, uint16(set.Port))
+		parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_PORT|int(nl.NLA_F_NET_BYTEORDER), bytesPort))
+		if set.PortTo > 0 {
+			bytesPortTo := make([]byte, 2)
+			binary.BigEndian.PutUint16(bytesPortTo, uint16(set.PortTo))
+			parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_PORT_TO|int(nl.NLA_F_NET_BYTEORDER), bytesPortTo))
+		}
+		parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_PROTO, nl.Uint8Attr(set.Proto)))
+	}
+}
+func (set *SetNetPort) String() string {
+	ipStr := fmt.Sprintf("%s", set.IP.String())
+	if set.CIDR > 0 {
+		ipStr = fmt.Sprintf("%s/%d", set.IP.String(), set.CIDR)
+	}
+	portStr := fmt.Sprintf("%s:%d", protoStr[set.Proto], set.Port)
+	if set.PortTo > 0 {
+		portStr = fmt.Sprintf("%s:%d-%d", protoStr[set.Proto], set.Port, set.PortTo)
+	}
+	return fmt.Sprintf("%s,%s", ipStr, portStr)
 }

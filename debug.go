@@ -1,7 +1,7 @@
 /*
  * @Author: JiHan
  * @Date: 2021-02-20 17:23:25
- * @LastEditTime: 2021-02-23 18:04:58
+ * @LastEditTime: 2021-02-24 11:02:47
  * @LastEditors: JiHan
  * @Description:
  * @Usage:
@@ -169,7 +169,7 @@ func debugUnSerializeNlData(msg []byte) {
 
 			break
 		default:
-			debugf("unknown ipset attribute from kernel: T:%# 04x V:%# 04x %+v", attr.Type, attr.Value, attr)
+			debugf("unknown ipset attribute from kernel: T:%#04x V:%# 04x %+v", attr.Type, attr.Value, attr)
 		}
 	}
 }
@@ -186,7 +186,7 @@ func debugParseAttrData(data []byte) {
 			nl.IPSET_ATTR_CADT_FLAGS | nl.NLA_F_NET_BYTEORDER:
 			debugf("%s:%d\n", cadtStr[int(attr.Type&nl.NLA_TYPE_MASK)], attr.Uint32())
 		default:
-			debugf("unknown ipset data attribute from kernel: T:%# 04x V:%# 04x %+v", attr.Type, attr.Value, attr)
+			debugf("unknown ipset data attribute from kernel: T:%#04x V:%# 04x %+v", attr.Type, attr.Value, attr)
 		}
 	}
 }
@@ -198,7 +198,7 @@ func debugParseAttrADT(data []byte) {
 			debugf("%s:\n", attrStr[nl.IPSET_ATTR_DATA])
 			debugParseEntry(attr.Value)
 		default:
-			debugf("unknown ADT attribute from kernel: T:%# 04x V:%# 04x %+v", attr.Type, attr.Value, attr)
+			debugf("unknown ADT attribute from kernel: T:%#04x V:%# 04x %+v", attr.Type, attr.Value, attr)
 		}
 	}
 }
@@ -225,7 +225,7 @@ func debugParseEntry(data []byte) {
 					nl.IPSET_ATTR_IPADDR_IPV6 | nl.NLA_F_NET_BYTEORDER:
 					debugf("        %s:%s\n", adtStr[int(attr.Type&nl.NLA_TYPE_MASK)], net.IP(attr.Value).String())
 				default:
-					debugf("unknown nested ADT attribute from kernel: T:%# 04x V:%# 04x %+v", attr.Type, attr.Value, attr)
+					debugf("unknown nested ADT attribute from kernel: T:%#04x V:%# 04x %+v", attr.Type, attr.Value, attr)
 				}
 			}
 		case nl.IPSET_ATTR_PORT | nl.NLA_F_NET_BYTEORDER,
@@ -233,11 +233,13 @@ func debugParseEntry(data []byte) {
 			debugf("    %s:%d\n", cadtStr[int(attr.Type&nl.NLA_TYPE_MASK)], attr.Uint16())
 		case nl.IPSET_ATTR_PROTO:
 			debugf("    %s:%d\n", cadtStr[nl.IPSET_ATTR_PROTO], attr.Uint8())
+		case nl.IPSET_ATTR_CIDR:
+			debugf("    %s:%d\n", cadtStr[nl.IPSET_ATTR_CIDR], attr.Uint8())
 		case nl.IPSET_ATTR_CADT_LINENO | nl.NLA_F_NET_BYTEORDER:
 			debugf("    %s:%d\n", cadtStr[nl.IPSET_ATTR_CADT_LINENO], attr.Uint32())
 			break
 		default:
-			debugf("unknown ADT attribute from kernel: T:%# 04x V:%# 04x %+v", attr.Type, attr.Value, attr)
+			debugf("unknown ADT attribute from kernel: T:%#04x V:%# 04x %+v", attr.Type, attr.Value, attr)
 		}
 	}
 	return
