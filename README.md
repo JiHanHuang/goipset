@@ -1,8 +1,8 @@
 # goipset
-A golang ipset client uses netlink to communicate with the kernel.
+A golang ipset client uses netlink to communicate with the kernel.   
 用golang写的一个ipset客户端，使用netlink与内核进行通信。
 
-其中netlink通信部分是基于：[netlink](https://github.com/vishvananda/netlink)
+其中netlink通信部分是基于：[netlink](https://github.com/vishvananda/netlink)    
 ipset相关功能也参考了其中的写法。
 
 ## 支持类型
@@ -81,5 +81,5 @@ func check(err error) {
 ```
 
 ## 更多
-后续将持续补齐ipset的相关功能，欢迎随时交流。
-提供一些ipset和iptables的配合使用的相关文档。
+后续将持续补齐ipset的相关功能，欢迎随时交流。   
+有必要将会提供一些ipset和iptables的配合使用的相关文档。
