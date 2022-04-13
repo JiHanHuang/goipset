@@ -1,6 +1,7 @@
 create hash_ip hash:ip
 add hash_ip 1.1.1.1
 add hash_ip 1.1.1.2
+add hash_ip 1.1.1.3-1.1.1.6
 list hash_ip
 del hash_ip 1.1.1.1
 flush hash_ip
@@ -9,6 +10,8 @@ destroy hash_ip
 create hash_ip_port hash:ip,port
 add hash_ip_port 1.1.1.1,80
 add hash_ip_port 1.1.1.2,TCP:81
+add hash_ip_port 1.1.1.3,UDP:80
+add hash_ip_port 1.1.1.4-1.1.1.6,UDP:80
 list hash_ip_port
 del hash_ip_port 1.1.1.1,80
 flush hash_ip_port
@@ -25,7 +28,43 @@ destroy hash_net
 create hash_net_port hash:net,port
 add hash_net_port 1.1.1.1/24,80
 add hash_net_port 1.1.2.1/24,TCP:81
+add hash_net_port 1.1.2.1/24,UDP:88
 list hash_net_port
 del hash_net_port 1.1.1.1/24,80
 flush hash_net_port
 destroy hash_net_port
+
+
+--family inet6 create hash_ipv6 hash:ip 
+add hash_ipv6 fe80::250:56ff:fea9:1cd4
+add hash_ipv6 fe80::250:56ff:fea9:1cd5
+list hash_ipv6
+del hash_ipv6 fe80::250:56ff:fea9:1cd4
+flush hash_ipv6
+destroy hash_ipv6
+
+--family inet6 create hash_ipv6_port hash:ip,port
+add hash_ipv6_port fe80::250:56ff:fea9:1cd4,80
+add hash_ipv6_port fe80::250:56ff:fea9:1cd5,TCP:81
+add hash_ipv6_port fe80::250:56ff:fea9:1cd6,UDP:80
+list hash_ipv6_port
+del hash_ipv6_port fe80::250:56ff:fea9:1cd4,80
+flush hash_ipv6_port
+destroy hash_ipv6_port
+
+--family inet6 create hash_net_v6 hash:net
+add hash_net_v6 fe80:2510::250:56ff:fea9:1cd4/64
+add hash_net_v6 fe80:2511::250:56ff:fea9:1cd4/64
+list hash_net_v6
+del hash_net_v6 fe80:2510::250:56ff:fea9:1cd4/64
+flush hash_net_v6
+destroy hash_net_v6
+
+--family inet6 create hash_net_port_v6 hash:net,port
+add hash_net_port_v6 fe80:2510::250:56ff:fea9:1cd4/64,80
+add hash_net_port_v6 fe80:2511::250:56ff:fea9:1cd4/64,TCP:81
+add hash_net_port_v6 fe80:2511::250:56ff:fea9:1cd4/64,UDP:88
+list hash_net_port_v6
+del hash_net_port_v6 fe80:2510::250:56ff:fea9:1cd4/64,80
+flush hash_net_port_v6
+destroy hash_net_port_v6

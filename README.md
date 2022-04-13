@@ -5,6 +5,15 @@ A golang ipset client uses netlink to communicate with the kernel.
 其中netlink通信部分是基于：[netlink](https://github.com/vishvananda/netlink)
 ipset相关功能也参考了其中的写法。
 
+## 支持类型
+1. hash:ip
+2. hash:ip,port
+3. hash:net
+4. hash:net,port
+
+所有支持类型都可以使用ipv4和ipv6
+
+
 ## 基础环境
 内核必须包含ipset的ko, 可以通过以下方式确认：
 ```

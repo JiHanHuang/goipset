@@ -103,12 +103,24 @@ var adtStr = map[int]string{
 	nl.IPSET_ATTR_SKBQUEUE:    "IPSET_ATTR_SKBQUEUE",
 }
 
-func debugIpsetResult(result GoIPSetResult) {
+func debugShowResult(result GoIPSetResult) {
 	if !Debug {
 		return
 	}
 	debugf("IpsetResult:\n")
 	debugf("%+v\n", result)
+}
+
+func debugIpsetResult(msgs [][]byte) {
+	if !Debug {
+		return
+	}
+	result, err := ipsetUnserialize(msgs)
+	if err != nil {
+		debugf("Ipset unserialize failed, Err:%v", err)
+		return
+	}
+	debugShowResult(result)
 }
 
 func debugIpsetRequest(req *nl.NetlinkRequest) {

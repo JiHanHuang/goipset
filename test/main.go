@@ -37,6 +37,7 @@ var (
 	timeoutVal   *uint32
 	timeout      = flag.Int("timeout", -1, "timeout, negative means omit the argument")
 	comment      = flag.String("comment", "", "comment")
+	family       = flag.String("family", "inet", "inet or inet6")
 	withComments = flag.Bool("with-comments", false, "create set with comment support")
 	withCounters = flag.Bool("with-counters", false, "create set with counters support")
 	withSkbinfo  = flag.Bool("with-skbinfo", false, "create set with skbinfo support")
@@ -102,12 +103,17 @@ func cmdProtocol(_ []string) {
 }
 
 func cmdCreate(args []string) {
+	f := unix.AF_INET
+	if *family == "inet6" {
+		f = unix.AF_INET6
+	}
 	err := goipset.Create(args[0], args[1], goipset.GoIpsetCreateOptions{
 		Replace:  *replace,
 		Timeout:  timeoutVal,
 		Comments: *withComments,
 		Counters: *withCounters,
 		Skbinfo:  *withSkbinfo,
+		Family:   f,
 	})
 	check(err)
 }

@@ -19,7 +19,10 @@ func TestParseIpsetProtocolResult(t *testing.T) {
 		t.Fatalf("reading test fixture failed: %v", err)
 	}
 
-	msg := ipsetUnserialize([][]byte{msgBytes})
+	msg, err := ipsetUnserialize([][]byte{msgBytes})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if msg.Protocol != 6 {
 		t.Errorf("expected msg.Protocol to equal 6, got %d", msg.Protocol)
 	}
@@ -31,7 +34,10 @@ func TestParseIpsetListResult(t *testing.T) {
 		t.Fatalf("reading test fixture failed: %v", err)
 	}
 
-	msg := ipsetUnserialize([][]byte{msgBytes})
+	msg, err := ipsetUnserialize([][]byte{msgBytes})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if msg.SetName != "clients" {
 		t.Errorf(`expected SetName to equal "clients", got %q`, msg.SetName)
 	}

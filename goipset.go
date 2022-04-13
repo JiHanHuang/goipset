@@ -30,6 +30,7 @@ type GoIPSetResult struct {
 	Revision uint8
 	Family   uint8
 	Flags    uint8
+	ProtoMin uint8
 	SetName  string
 	TypeName string
 
@@ -51,6 +52,7 @@ type GoIpsetCreateOptions struct {
 	Counters bool
 	Comments bool
 	Skbinfo  bool
+	Family   int
 }
 
 // GoIpset using save sockets...
@@ -82,7 +84,7 @@ func Flush(setname string) error {
 }
 
 // List dumps an specific ipset.
-func List(setname string) (*GoIPSetResult, error) {
+func List(setname string) (GoIPSetResult, error) {
 	return gipset.List(setname)
 }
 
@@ -103,18 +105,23 @@ func Del(setname string, entry *GoIPSetEntry) error {
 
 func (g *GoIpset) Protocol() (uint8, error) {
 	req := g.newIpsetRequest(nl.IPSET_CMD_PROTOCOL)
-	msgs, err := req.Execute(unix.NETLINK_NETFILTER, 0)
-
+	msgs, err := ipsetExecute(req)
 	if err != nil {
 		return 0, err
 	}
 
-	return ipsetUnserialize(msgs).Protocol, nil
+	result, err := ipsetUnserialize(msgs)
+	return result.Protocol, err
 }
 
 func (g *GoIpset) Create(setname, typename string, options GoIpsetCreateOptions) error {
 
-	result, err := g.ipsetType(typename)
+	family := uint8(unix.AF_INET)
+	if options.Family == unix.AF_INET6 {
+		family = uint8(options.Family)
+	}
+
+	result, err := g.ipsetType(typename, family)
 	if err != nil {
 		return err
 	}
@@ -128,7 +135,7 @@ func (g *GoIpset) Create(setname, typename string, options GoIpsetCreateOptions)
 	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_SETNAME, nl.ZeroTerminated(setname)))
 	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_TYPENAME, nl.ZeroTerminated(typename)))
 	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_REVISION, nl.Uint8Attr(result.Revision)))
-	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_FAMILY, nl.Uint8Attr(2)))
+	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_FAMILY, nl.Uint8Attr(family)))
 
 	data := nl.NewRtAttr(nl.IPSET_ATTR_DATA|int(nl.NLA_F_NESTED), nil)
 
@@ -174,17 +181,16 @@ func (g *GoIpset) Flush(setname string) error {
 	return err
 }
 
-func (g *GoIpset) List(name string) (*GoIPSetResult, error) {
+func (g *GoIpset) List(name string) (GoIPSetResult, error) {
 	req := g.newIpsetRequest(nl.IPSET_CMD_LIST)
 	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_SETNAME, nl.ZeroTerminated(name)))
 
 	msgs, err := ipsetExecute(req)
 	if err != nil {
-		return nil, err
+		return GoIPSetResult{}, err
 	}
 
-	result := ipsetUnserialize(msgs)
-	return &result, nil
+	return ipsetUnserialize(msgs)
 }
 
 func (g *GoIpset) ListAll() ([]GoIPSetResult, error) {
@@ -203,20 +209,20 @@ func (g *GoIpset) ListAll() ([]GoIPSetResult, error) {
 	return result, nil
 }
 
-func (g *GoIpset) ipsetType(typename string) (GoIPSetResult, error) {
+func (g *GoIpset) ipsetType(typename string, family uint8) (GoIPSetResult, error) {
 	req := g.newIpsetRequest(nl.IPSET_CMD_TYPE)
 	req.Flags |= unix.NLM_F_EXCL
 	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_TYPENAME, nl.ZeroTerminated(typename)))
-	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_FAMILY, nl.Uint8Attr(2)))
+	req.AddData(nl.NewRtAttr(nl.IPSET_ATTR_FAMILY, nl.Uint8Attr(family)))
 
 	debugIpsetRequest(req)
 
-	msgs, err := req.Execute(unix.NETLINK_NETFILTER, 0)
+	msgs, err := ipsetExecute(req)
 	if err != nil {
 		return GoIPSetResult{}, err
 	}
 
-	return ipsetUnserialize(msgs), nil
+	return ipsetUnserialize(msgs)
 }
 
 func (g *GoIpset) ipsetAddDel(nlCmd int, setname string, entry *GoIPSetEntry) error {
@@ -263,21 +269,23 @@ func (g *GoIpset) newIpsetRequest(cmd int) *nl.NetlinkRequest {
 
 func ipsetExecute(req *nl.NetlinkRequest) (msgs [][]byte, err error) {
 	msgs, err = req.Execute(unix.NETLINK_NETFILTER, 0)
-
 	if err != nil {
 		if errno := int(err.(syscall.Errno)); errno >= nl.IPSET_ERR_PRIVATE {
 			err = nl.IPSetError(uintptr(errno))
 		}
 	}
+	debugIpsetResult(msgs)
 	return
 }
 
-func ipsetUnserialize(msgs [][]byte) (result GoIPSetResult) {
+func ipsetUnserialize(msgs [][]byte) (result GoIPSetResult, err error) {
 	for _, msg := range msgs {
-		result.unserialize(msg)
+		err = result.unserialize(msg)
+		if err != nil {
+			return
+		}
 	}
-	debugIpsetResult(result)
-	return result
+	return result, nil
 }
 
 func (result *GoIPSetResult) unserialize(msg []byte) error {
@@ -297,6 +305,8 @@ func (result *GoIPSetResult) unserialize(msg []byte) error {
 			result.Family = attr.Value[0]
 		case nl.IPSET_ATTR_FLAGS:
 			result.Flags = attr.Value[0]
+		case nl.IPSET_ATTR_PROTOCOL_MIN:
+			result.ProtoMin = attr.Value[0]
 		case nl.IPSET_ATTR_DATA | nl.NLA_F_NESTED:
 			if err := result.parseAttrData(attr.Value); err != nil {
 				return err
@@ -374,7 +384,8 @@ func parseIPSetEntry(data []byte) (entry GoIPSetEntry, err error) {
 		case nl.IPSET_ATTR_IP | nl.NLA_F_NESTED:
 			for attr := range nl.ParseAttributes(attr.Value) {
 				switch attr.Type {
-				case nl.IPSET_ATTR_IP:
+				case nl.IPSET_ATTR_IPADDR_IPV4,
+					nl.IPSET_ATTR_IPADDR_IPV6:
 					set.IP = net.IP(attr.Value)
 				default:
 					err = fmt.Errorf("unknown nested ADT attribute from kernel: %+v", attr)

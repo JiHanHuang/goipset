@@ -55,7 +55,7 @@ func (set *SetResult) String() string {
 	return retStr
 }
 
-//SetIP surpport signal ip and ip-ipto
+//SetIP surpport signal ip, ip-ipto[only ipv4] and ipv6
 type SetIP struct {
 	IP   net.IP
 	IPTO net.IP
@@ -64,11 +64,19 @@ type SetIP struct {
 func (set *SetIP) serializeAttr(parent *nl.RtAttr) {
 	if set.IP != nil {
 		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
-		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		if ip4 := set.IP.To4(); ip4 != nil {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		} else {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IP.To16()))
+		}
 		parent.AddChild(attrIP)
 		if set.IPTO != nil {
 			attrIPTO := nl.NewRtAttr(nl.IPSET_ATTR_IP_TO|int(nl.NLA_F_NESTED), nil)
-			attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To4()))
+			if ip4 := set.IP.To4(); ip4 != nil {
+				attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To4()))
+			} else {
+				attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To16()))
+			}
 			parent.AddChild(attrIPTO)
 		}
 	}
@@ -83,9 +91,10 @@ func (set *SetIP) String() string {
 /*SetIPPort support ip,port format
 ip,port:
 	entry type: ip,<proto:>port
-	ip type:x.x.x.x or x.x.x.x-x.x.x.x
+	ip type:x.x.x.x or x.x.x.x-x.x.x.x or ipv6
 	port type: xx or xx-xx
 	proto type: udp or tcp or null
+ip type not support ipv6 range
 */
 type SetIPPort struct {
 	Name   string
@@ -99,11 +108,19 @@ type SetIPPort struct {
 func (set *SetIPPort) serializeAttr(parent *nl.RtAttr) {
 	if set.IP != nil && set.Port > 0 {
 		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
-		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		if ip4 := set.IP.To4(); ip4 != nil {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		} else {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IP.To16()))
+		}
 		parent.AddChild(attrIP)
 		if set.IPTO != nil {
 			attrIPTO := nl.NewRtAttr(nl.IPSET_ATTR_IP_TO|int(nl.NLA_F_NESTED), nil)
-			attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To4()))
+			if ip4 := set.IP.To4(); ip4 != nil {
+				attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To4()))
+			} else {
+				attrIPTO.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IPTO.To16()))
+			}
 			parent.AddChild(attrIPTO)
 		}
 		bytesPort := make([]byte, 2)
@@ -152,7 +169,11 @@ type SetNet struct {
 func (set *SetNet) serializeAttr(parent *nl.RtAttr) {
 	if set.IP != nil {
 		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
-		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		if ip4 := set.IP.To4(); ip4 != nil {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		} else {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IP.To16()))
+		}
 		parent.AddChild(attrIP)
 		if set.CIDR > 0 {
 			parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_CIDR, nl.Uint8Attr(set.CIDR)))
@@ -178,7 +199,11 @@ type SetNetPort struct {
 func (set *SetNetPort) serializeAttr(parent *nl.RtAttr) {
 	if set.IP != nil {
 		attrIP := nl.NewRtAttr(nl.IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nil)
-		attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		if ip4 := set.IP.To4(); ip4 != nil {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV4|int(nl.NLA_F_NET_BYTEORDER), set.IP.To4()))
+		} else {
+			attrIP.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_IPADDR_IPV6|int(nl.NLA_F_NET_BYTEORDER), set.IP.To16()))
+		}
 		parent.AddChild(attrIP)
 		if set.CIDR > 0 {
 			parent.AddChild(nl.NewRtAttr(nl.IPSET_ATTR_CIDR, nl.Uint8Attr(set.CIDR)))

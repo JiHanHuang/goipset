@@ -19,6 +19,14 @@ insmod <your_path>/ip_set.ko
 ```
 更多ipset信息请参考[官网](http://ipset.netfilter.org/ipset.man.html)
 
+## 支持类型
+1. hash:ip
+2. hash:ip,port
+3. hash:net
+4. hash:net,port
+
+所有支持类型都可以使用ipv4和ipv6
+
 ## 使用指南
 
 **作为单纯客户端使用**
