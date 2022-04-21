@@ -34,8 +34,8 @@ var (
 		"del":      {cmdAddDel(goipset.Del), "delete entry", 2},
 	}
 
-	timeoutVal   *uint32
-	timeout      = flag.Int("timeout", -1, "timeout, negative means omit the argument")
+	timeoutVal   uint32
+	timeout      = flag.Uint("timeout", 0, "timeout, negative means omit the argument")
 	comment      = flag.String("comment", "", "comment")
 	family       = flag.String("family", "inet", "inet or inet6")
 	withComments = flag.Bool("with-comments", false, "create set with comment support")
@@ -56,7 +56,7 @@ func main() {
 
 	if *timeout >= 0 {
 		v := uint32(*timeout)
-		timeoutVal = &v
+		timeoutVal = v
 	}
 
 	log.SetFlags(log.Lshortfile)

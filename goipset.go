@@ -16,9 +16,9 @@ type GoIPSetEntry struct {
 
 	Set
 
-	Timeout *uint32
-	Packets *uint64
-	Bytes   *uint64
+	Timeout uint32
+	Packets uint64
+	Bytes   uint64
 
 	Replace bool // replace existing entry
 }
@@ -40,7 +40,7 @@ type GoIPSetResult struct {
 	References   uint32
 	SizeInMemory uint32
 	CadtFlags    uint32
-	Timeout      *uint32
+	Timeout      uint32
 
 	Entries []GoIPSetEntry
 }
@@ -48,7 +48,7 @@ type GoIPSetResult struct {
 // GoIpsetCreateOptions is the options struct for creating a new ipset
 type GoIpsetCreateOptions struct {
 	Replace  bool // replace existing ipset
-	Timeout  *uint32
+	Timeout  uint32
 	Counters bool
 	Comments bool
 	Skbinfo  bool
@@ -143,8 +143,8 @@ func (g *GoIpset) Create(setname, typename string, options GoIpsetCreateOptions)
 
 	data := nl.NewRtAttr(nl.IPSET_ATTR_DATA|int(nl.NLA_F_NESTED), nil)
 
-	if timeout := options.Timeout; timeout != nil {
-		data.AddChild(&nl.Uint32Attribute{Type: nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER, Value: *timeout})
+	if timeout := options.Timeout; timeout != 0 {
+		data.AddChild(&nl.Uint32Attribute{Type: nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER, Value: timeout})
 	}
 
 	var cadtFlags uint32
@@ -213,6 +213,16 @@ func (g *GoIpset) ListAll() ([]GoIPSetResult, error) {
 	return result, nil
 }
 
+// Add adds an entry to an existing ipset.
+func (g *GoIpset) Add(setname string, entry *GoIPSetEntry) error {
+	return g.ipsetAddDel(nl.IPSET_CMD_ADD, setname, entry)
+}
+
+// Del deletes an entry from an existing ipset.
+func (g *GoIpset) Del(setname string, entry *GoIPSetEntry) error {
+	return g.ipsetAddDel(nl.IPSET_CMD_DEL, setname, entry)
+}
+
 func (g *GoIpset) ipsetType(typename string, family uint8) (GoIPSetResult, error) {
 	req := g.newIpsetRequest(nl.IPSET_CMD_TYPE)
 	req.Flags |= unix.NLM_F_EXCL
@@ -242,8 +252,8 @@ func (g *GoIpset) ipsetAddDel(nlCmd int, setname string, entry *GoIPSetEntry) er
 		req.Flags |= unix.NLM_F_EXCL
 	}
 
-	if entry.Timeout != nil {
-		data.AddChild(&nl.Uint32Attribute{Type: nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER, Value: *entry.Timeout})
+	if entry.Timeout != 0 {
+		data.AddChild(&nl.Uint32Attribute{Type: nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER, Value: entry.Timeout})
 	}
 	entry.Set.serializeAttr(data)
 
@@ -335,7 +345,7 @@ func (result *GoIPSetResult) parseAttrData(data []byte) error {
 			result.MaxElements = attr.Uint32()
 		case nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER:
 			val := attr.Uint32()
-			result.Timeout = &val
+			result.Timeout = val
 		case nl.IPSET_ATTR_ELEMENTS | nl.NLA_F_NET_BYTEORDER:
 			result.NumEntries = attr.Uint32()
 		case nl.IPSET_ATTR_REFERENCES | nl.NLA_F_NET_BYTEORDER:
@@ -374,13 +384,13 @@ func parseIPSetEntry(data []byte) (entry GoIPSetEntry, err error) {
 		switch attr.Type {
 		case nl.IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER:
 			val := attr.Uint32()
-			entry.Timeout = &val
+			entry.Timeout = val
 		case nl.IPSET_ATTR_BYTES | nl.NLA_F_NET_BYTEORDER:
 			val := attr.Uint64()
-			entry.Bytes = &val
+			entry.Bytes = val
 		case nl.IPSET_ATTR_PACKETS | nl.NLA_F_NET_BYTEORDER:
 			val := attr.Uint64()
-			entry.Packets = &val
+			entry.Packets = val
 		case nl.IPSET_ATTR_ETHER:
 			set.MAC = net.HardwareAddr(attr.Value)
 		case nl.IPSET_ATTR_COMMENT:

@@ -56,8 +56,8 @@ func TestParseIpsetListResult(t *testing.T) {
 	if msg.HashSize != 1024 {
 		t.Errorf("expected HashSize to equal 1024, got %d", msg.HashSize)
 	}
-	if *msg.Timeout != 3600 {
-		t.Errorf("expected Timeout to equal 3600, got %d", *msg.Timeout)
+	if msg.Timeout != 3600 {
+		t.Errorf("expected Timeout to equal 3600, got %d", msg.Timeout)
 	}
 	if msg.MaxElements != 65536 {
 		t.Errorf("expected MaxElements to equal 65536, got %d", msg.MaxElements)
@@ -71,14 +71,14 @@ func TestParseIpsetListResult(t *testing.T) {
 
 	// first entry
 	ent := msg.Entries[0]
-	if int(*ent.Timeout) != 3577 {
-		t.Errorf("expected Timeout for first entry to equal 3577, got %d", *ent.Timeout)
+	if int(ent.Timeout) != 3577 {
+		t.Errorf("expected Timeout for first entry to equal 3577, got %d", ent.Timeout)
 	}
-	if int(*ent.Bytes) != 4121 {
-		t.Errorf("expected Bytes for first entry to equal 4121, got %d", *ent.Bytes)
+	if int(ent.Bytes) != 4121 {
+		t.Errorf("expected Bytes for first entry to equal 4121, got %d", ent.Bytes)
 	}
-	if int(*ent.Packets) != 42 {
-		t.Errorf("expected Packets for first entry to equal 42, got %d", *ent.Packets)
+	if int(ent.Packets) != 42 {
+		t.Errorf("expected Packets for first entry to equal 42, got %d", ent.Packets)
 	}
 	if ent.Comment != "foo bar" {
 		t.Errorf("unexpected Comment for first entry: %q", ent.Comment)
