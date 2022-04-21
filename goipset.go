@@ -103,6 +103,10 @@ func Del(setname string, entry *GoIPSetEntry) error {
 	return gipset.ipsetAddDel(nl.IPSET_CMD_DEL, setname, entry)
 }
 
+func NewGoIpset() *GoIpset {
+	return &GoIpset{}
+}
+
 func (g *GoIpset) Protocol() (uint8, error) {
 	req := g.newIpsetRequest(nl.IPSET_CMD_PROTOCOL)
 	msgs, err := ipsetExecute(req)
