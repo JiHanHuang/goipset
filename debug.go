@@ -103,15 +103,19 @@ var adtStr = map[int]string{
 	nl.IPSET_ATTR_SKBQUEUE:    "IPSET_ATTR_SKBQUEUE",
 }
 
-func debugShowResult(result GoIPSetResult) {
+func debugShowResult(result GoIPSetResult, err error) {
 	if !Debug {
 		return
 	}
 	debugf("IpsetResult:\n")
+	if err != nil {
+		debugf("Err:%s", err.Error())
+		return
+	}
 	debugf("%+v\n", result)
 }
 
-func debugIpsetResult(msgs [][]byte) {
+func debugIpsetResult(msgs [][]byte, err error) {
 	if !Debug {
 		return
 	}
@@ -120,7 +124,7 @@ func debugIpsetResult(msgs [][]byte) {
 		debugf("Ipset unserialize failed, Err:%v", err)
 		return
 	}
-	debugShowResult(result)
+	debugShowResult(result, err)
 }
 
 func debugIpsetRequest(req *nl.NetlinkRequest) {

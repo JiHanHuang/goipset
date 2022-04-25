@@ -288,7 +288,7 @@ func ipsetExecute(req *nl.NetlinkRequest) (msgs [][]byte, err error) {
 			err = nl.IPSetError(uintptr(errno))
 		}
 	}
-	debugIpsetResult(msgs)
+	debugIpsetResult(msgs, err)
 	return
 }
 
