@@ -354,8 +354,6 @@ func (result *GoIPSetResult) parseAttrData(data []byte) error {
 			result.SizeInMemory = attr.Uint32()
 		case nl.IPSET_ATTR_CADT_FLAGS | nl.NLA_F_NET_BYTEORDER:
 			result.CadtFlags = attr.Uint32()
-		default:
-			return fmt.Errorf("unknown ipset data attribute from kernel: %+v %v", attr, attr.Type&nl.NLA_TYPE_MASK)
 		}
 	}
 	return nil
