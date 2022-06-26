@@ -421,13 +421,16 @@ func (req *NetlinkRequest) AddRawData(data []byte) {
 // by resType.
 func (req *NetlinkRequest) Execute(sockType int, resType uint16) ([][]byte, error) {
 	var (
-		s   *NetlinkSocket
-		err error
+		s      *NetlinkSocket
+		err    error
+		reqSeq uint32
 	)
 
 	if req.SocketHandle != nil {
 		s = req.SocketHandle.Socket
-		req.Seq = atomic.AddUint32(&req.Seq, 1)
+		reqSeq = atomic.AddUint32(&req.Seq, 1)
+	} else {
+		reqSeq = atomic.LoadUint32(&req.Seq)
 	}
 	sharedSocket := s != nil
 
@@ -471,11 +474,11 @@ done:
 			return nil, fmt.Errorf("Wrong sender portid %d, expected %d", from.Pid, PidKernel)
 		}
 		for _, m := range msgs {
-			if m.Header.Seq != req.Seq {
+			if m.Header.Seq != reqSeq {
 				if sharedSocket {
 					continue
 				}
-				return nil, fmt.Errorf("Wrong Seq nr %d, expected %d", m.Header.Seq, req.Seq)
+				return nil, fmt.Errorf("Wrong Seq nr %d, expected %d", m.Header.Seq, reqSeq)
 			}
 			if m.Header.Pid != pid {
 				continue
