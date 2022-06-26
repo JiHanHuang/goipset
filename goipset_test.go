@@ -84,14 +84,16 @@ func TestParseIpsetListResult(t *testing.T) {
 		t.Errorf("unexpected Comment for first entry: %q", ent.Comment)
 	}
 	expectedMAC := net.HardwareAddr{0xde, 0xad, 0x0, 0x0, 0xbe, 0xef}
-	if !bytes.Equal(ent.MAC, expectedMAC) {
-		t.Errorf("expected MAC for first entry to be %s, got %s", expectedMAC.String(), ent.MAC.String())
+	if !bytes.Equal(ent.Set.(*SetResult).MAC, expectedMAC) {
+		t.Errorf("expected MAC for first entry to be %s, got %s", expectedMAC.String(),
+			ent.Set.(*SetResult).MAC.String())
 	}
 
 	// second entry
 	ent = msg.Entries[1]
 	expectedMAC = net.HardwareAddr{0x1, 0x2, 0x3, 0x0, 0x1, 0x2}
-	if !bytes.Equal(ent.MAC, expectedMAC) {
-		t.Errorf("expected MAC for second entry to be %s, got %s", expectedMAC.String(), ent.MAC.String())
+	if !bytes.Equal(ent.Set.(*SetResult).MAC, expectedMAC) {
+		t.Errorf("expected MAC for second entry to be %s, got %s", expectedMAC.String(),
+			ent.Set.(*SetResult).MAC.String())
 	}
 }
