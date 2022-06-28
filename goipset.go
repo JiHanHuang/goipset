@@ -284,8 +284,11 @@ func (g *GoIpset) newIpsetRequest(cmd int) *nl.NetlinkRequest {
 func ipsetExecute(req *nl.NetlinkRequest) (msgs [][]byte, err error) {
 	msgs, err = req.Execute(unix.NETLINK_NETFILTER, 0)
 	if err != nil {
-		if errno := int(err.(syscall.Errno)); errno >= nl.IPSET_ERR_PRIVATE {
-			err = nl.IPSetError(uintptr(errno))
+		switch v := err.(type) {
+		case syscall.Errno:
+			if v >= nl.IPSET_ERR_PRIVATE {
+				err = nl.IPSetError(uintptr(v))
+			}
 		}
 	}
 	debugIpsetResult(msgs, err)
